@@ -19,10 +19,52 @@ import java.util.Date
 import kotlin.collections.isNotEmpty
 
 class CoverageMeasurements {
+
     companion object {
+        // Define constants for your keys for better maintainability and to avoid typos
+        const val KEY_LATITUDE = "latitude"
+        const val KEY_LONGITUDE = "longitude"
+        const val KEY_IS_POSITION_FROM_GPS = "is_position_from_GPS"
+        const val KEY_GPS_ACCURACY = "gps_accuracy"
+        const val DOWNLOAD_SPEED = "download_speed"
+        const val UPLOAD_SPEED = "upload_speed"
+        const val KEY_SIGNAL_STRENGTH_DBM = "signal_strength_dbm"
+        const val KEY_SIGNAL_STRENGTH_ASU = "signal_strength_asu"
+        const val KEY_NETWORK_CODE = "network_code"
+        const val KEY_MOBILE_COUNTRY_CODE = "mobile_country_code"
+        const val KEY_CELL_ID = "cell_id"
+        const val KEY_TIMESTAMP = "timestamp"
+        const val KEY_ANDROID_ID = "android_id"
+        const val KEY_APP_NAME = "app_name"
+        const val KEY_APP_VERSION = "app_version"
+        const val KEY_LIBRARY_VERSION = "library_version"
+        const val KEY_NETWORK_TYPE = "network_type"
+        const val KEY_DATA_NETWORK_TYPE = "data_network_type"
+
+
         @SuppressLint("HardwareIds", "MissingPermission")
         fun getCoverageMeasurements(context: Context): Map<String, Any?> {
-            val data = kotlin.collections.mutableMapOf<String, Any?>()
+            // Initialize all expected keys with null so we know what properties to expect
+            val data = kotlin.collections.mutableMapOf<String, Any?>(
+                KEY_LATITUDE to null,
+                KEY_LONGITUDE to null,
+                KEY_IS_POSITION_FROM_GPS to null,
+                KEY_GPS_ACCURACY to null,
+                DOWNLOAD_SPEED to null,
+                UPLOAD_SPEED to null,
+                KEY_SIGNAL_STRENGTH_DBM to null,
+                KEY_SIGNAL_STRENGTH_ASU to null,
+                KEY_NETWORK_CODE to null,
+                KEY_MOBILE_COUNTRY_CODE to null,
+                KEY_CELL_ID to null,
+                KEY_TIMESTAMP to null, // Will be overridden
+                KEY_ANDROID_ID to null,
+                KEY_APP_NAME to null,
+                KEY_APP_VERSION to null,
+                KEY_LIBRARY_VERSION to null, // Will be overridden
+                KEY_NETWORK_TYPE to null,
+                KEY_DATA_NETWORK_TYPE to null
+            )
 
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
@@ -32,99 +74,78 @@ class CoverageMeasurements {
                     ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
 
                 location?.let {
-                    data["latitude"] = it.latitude
-                    data["longitude"] = it.longitude
-                    data["is_position_from_GPS"] = it.provider == LocationManager.GPS_PROVIDER
+                    data[KEY_LATITUDE] = it.latitude
+                    data[KEY_LONGITUDE] = it.longitude
+                    data[KEY_IS_POSITION_FROM_GPS] = it.provider == LocationManager.GPS_PROVIDER
                     if (it.provider == LocationManager.GPS_PROVIDER) {
-                        data["gps_accuracy"] = it.accuracy // Accuracy in meters
+                        data[KEY_GPS_ACCURACY] = it.accuracy
                     }
                 }
             }
 
             val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                // Phone signal strength
                 val allCellInfo = telephonyManager.allCellInfo
                 if (allCellInfo != null && allCellInfo.isNotEmpty()) {
                     val cellInfo = allCellInfo[0] // Primary cell
-                    val SIGNAL_STRENGTH_DBM = "signal_strength_dbm"
-                    val SIGNAL_STRENGTH_ASU = "signal_strength_asu"
                     when (cellInfo) {
                         is CellInfoLte -> {
                             val cellSignalStrengthLte: CellSignalStrengthLte = cellInfo.cellSignalStrength
-                            data[SIGNAL_STRENGTH_DBM] = cellSignalStrengthLte.dbm
-                            data[SIGNAL_STRENGTH_ASU] = cellSignalStrengthLte.asuLevel
+                            data[KEY_SIGNAL_STRENGTH_DBM] = cellSignalStrengthLte.dbm
+                            data[KEY_SIGNAL_STRENGTH_ASU] = cellSignalStrengthLte.asuLevel
                         }
                         is CellInfoGsm -> {
                             val cellSignalStrengthGsm: CellSignalStrengthGsm = cellInfo.cellSignalStrength
-                            data[SIGNAL_STRENGTH_DBM] = cellSignalStrengthGsm.dbm
-                            data[SIGNAL_STRENGTH_ASU] = cellSignalStrengthGsm.asuLevel
+                            data[KEY_SIGNAL_STRENGTH_DBM] = cellSignalStrengthGsm.dbm
+                            data[KEY_SIGNAL_STRENGTH_ASU] = cellSignalStrengthGsm.asuLevel
                         }
                         is CellInfoWcdma -> {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                                 val cellSignalStrengthWcdma: CellSignalStrengthWcdma = cellInfo.cellSignalStrength
-                                data[SIGNAL_STRENGTH_DBM] = cellSignalStrengthWcdma.dbm
-                                data[SIGNAL_STRENGTH_ASU] = cellSignalStrengthWcdma.asuLevel
-                            } else {
-                                data[SIGNAL_STRENGTH_DBM] = null
-                                data[SIGNAL_STRENGTH_ASU] = null
+                                data[KEY_SIGNAL_STRENGTH_DBM] = cellSignalStrengthWcdma.dbm
+                                data[KEY_SIGNAL_STRENGTH_ASU] = cellSignalStrengthWcdma.asuLevel
                             }
                         }
                     }
 
-                    // Network Code, Mobile Country Code, and Cell ID
-                    val NETWORK_CODE = "network_code"
-                    val MOBILE_COUNTRY_CODE = "mobile_country_code"
-                    val CELL_ID = "cell_id"
                     when (cellInfo) {
                         is CellInfoGsm -> {
-                            data[NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
-                            data[MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
-                            data[CELL_ID] = cellInfo.cellIdentity.cid
+                            data[KEY_NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
+                            data[KEY_MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
+                            data[KEY_CELL_ID] = cellInfo.cellIdentity.cid
                         }
                         is CellInfoLte -> {
-                            data[NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
-                            data[MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
-                            data[CELL_ID] = cellInfo.cellIdentity.ci
+                            data[KEY_NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
+                            data[KEY_MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
+                            data[KEY_CELL_ID] = cellInfo.cellIdentity.ci
                         }
                         is CellInfoWcdma -> {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                                data[NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
-                                data[MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
-                                data[CELL_ID] = cellInfo.cellIdentity.cid
-                            } else {
-                                data[NETWORK_CODE] = null
-                                data[MOBILE_COUNTRY_CODE] = null
-                                data[CELL_ID] = null
+                                data[KEY_NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
+                                data[KEY_MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
+                                data[KEY_CELL_ID] = cellInfo.cellIdentity.cid
                             }
                         }
                     }
                 }
             }
 
-            // Timestamp
-            data["timestamp"] = Date().time
+            data[KEY_TIMESTAMP] = Date().time // Always set
+            data[KEY_ANDROID_ID] = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
 
-            // ANDROID_ID
-            data["android_id"] = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-
-            // App info
             try {
                 val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                data["app_name"] = context.applicationInfo.loadLabel(context.packageManager).toString()
-                data["app_version"] = pInfo.versionName
+                data[KEY_APP_NAME] = context.applicationInfo.loadLabel(context.packageManager).toString()
+                data[KEY_APP_VERSION] = pInfo.versionName
             } catch (e: PackageManager.NameNotFoundException) {
                 e.printStackTrace()
             }
 
-            // Library version
-            data["library_version"] = "v0.1"
-
-            // Network Type
+            data[KEY_LIBRARY_VERSION] = "v0.1" // Always set
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                data["network_type"] = getNetworkTypeString(telephonyManager.networkType)
+                data[KEY_NETWORK_TYPE] = getNetworkTypeString(telephonyManager.networkType)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    data["data_network_type"] = getNetworkTypeString(telephonyManager.dataNetworkType)
+                    data[KEY_DATA_NETWORK_TYPE] = getNetworkTypeString(telephonyManager.dataNetworkType)
                 }
             }
 
@@ -156,3 +177,4 @@ class CoverageMeasurements {
             }
         }
     }
+}
