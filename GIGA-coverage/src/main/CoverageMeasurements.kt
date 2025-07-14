@@ -18,14 +18,12 @@ import androidx.core.content.getSystemService
 import java.util.Date
 import kotlin.collections.isNotEmpty
 
-class CoverageMeasurements { // No primary constructor needed for the class itself now
-
+class CoverageMeasurements {
     companion object {
         @SuppressLint("HardwareIds", "MissingPermission")
-        fun getCoverageMeasurements(context: Context): Map<String, Any?> { // Pass Context as a parameter
+        fun getCoverageMeasurements(context: Context): Map<String, Any?> {
             val data = kotlin.collections.mutableMapOf<String, Any?>()
 
-            // Location data
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -43,51 +41,61 @@ class CoverageMeasurements { // No primary constructor needed for the class itse
                 }
             }
 
-            // Telephony data
             val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
                 // Phone signal strength
                 val allCellInfo = telephonyManager.allCellInfo
                 if (allCellInfo != null && allCellInfo.isNotEmpty()) {
                     val cellInfo = allCellInfo[0] // Primary cell
+                    val SIGNAL_STRENGTH_DBM = "signal_strength_dbm"
+                    val SIGNAL_STRENGTH_ASU = "signal_strength_asu"
                     when (cellInfo) {
                         is CellInfoLte -> {
                             val cellSignalStrengthLte: CellSignalStrengthLte = cellInfo.cellSignalStrength
-                            data["signal_strength_dbm"] = cellSignalStrengthLte.dbm
-                            data["signal_strength_asu"] = cellSignalStrengthLte.asuLevel
+                            data[SIGNAL_STRENGTH_DBM] = cellSignalStrengthLte.dbm
+                            data[SIGNAL_STRENGTH_ASU] = cellSignalStrengthLte.asuLevel
                         }
                         is CellInfoGsm -> {
                             val cellSignalStrengthGsm: CellSignalStrengthGsm = cellInfo.cellSignalStrength
-                            data["signal_strength_dbm"] = cellSignalStrengthGsm.dbm
-                            data["signal_strength_asu"] = cellSignalStrengthGsm.asuLevel
+                            data[SIGNAL_STRENGTH_DBM] = cellSignalStrengthGsm.dbm
+                            data[SIGNAL_STRENGTH_ASU] = cellSignalStrengthGsm.asuLevel
                         }
                         is CellInfoWcdma -> {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                                 val cellSignalStrengthWcdma: CellSignalStrengthWcdma = cellInfo.cellSignalStrength
-                                data["signal_strength_dbm"] = cellSignalStrengthWcdma.dbm
-                                data["signal_strength_asu"] = cellSignalStrengthWcdma.asuLevel
+                                data[SIGNAL_STRENGTH_DBM] = cellSignalStrengthWcdma.dbm
+                                data[SIGNAL_STRENGTH_ASU] = cellSignalStrengthWcdma.asuLevel
+                            } else {
+                                data[SIGNAL_STRENGTH_DBM] = null
+                                data[SIGNAL_STRENGTH_ASU] = null
                             }
                         }
                     }
 
                     // Network Code, Mobile Country Code, and Cell ID
+                    val NETWORK_CODE = "network_code"
+                    val MOBILE_COUNTRY_CODE = "mobile_country_code"
+                    val CELL_ID = "cell_id"
                     when (cellInfo) {
                         is CellInfoGsm -> {
-                            data["network_code"] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
-                            data["mobile_country_code"] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
-                            data["cell_id"] = cellInfo.cellIdentity.cid
+                            data[NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
+                            data[MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
+                            data[CELL_ID] = cellInfo.cellIdentity.cid
                         }
                         is CellInfoLte -> {
-                            data["network_code"] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
-                            data["mobile_country_code"] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
-                            data["cell_id"] = cellInfo.cellIdentity.ci
+                            data[NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
+                            data[MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
+                            data[CELL_ID] = cellInfo.cellIdentity.ci
                         }
                         is CellInfoWcdma -> {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                                data["network_code"] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
-                                data["mobile_country_code"] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
-                                data["cell_id"] = cellInfo.cellIdentity.cid
+                                data[NETWORK_CODE] = cellInfo.cellIdentity.mncString ?: cellInfo.cellIdentity.mnc
+                                data[MOBILE_COUNTRY_CODE] = cellInfo.cellIdentity.mccString ?: cellInfo.cellIdentity.mcc
+                                data[CELL_ID] = cellInfo.cellIdentity.cid
+                            } else {
+                                data[NETWORK_CODE] = null
+                                data[MOBILE_COUNTRY_CODE] = null
+                                data[CELL_ID] = null
                             }
                         }
                     }
