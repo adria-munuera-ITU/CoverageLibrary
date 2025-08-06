@@ -16,6 +16,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.*
 import java.util.*
+import android.content.ContentResolver
 
 class CoverageMeasurementsTest {
 
@@ -26,6 +27,7 @@ class CoverageMeasurementsTest {
     private lateinit var mockLocation: Location
     private lateinit var mockCellInfoLte: CellInfoLte
     private lateinit var mockCellSignalStrengthLte: CellSignalStrengthLte
+    private lateinit var mockContentResolver: android.content.ContentResolver
 
     @Before
     fun setUp() {
@@ -36,14 +38,31 @@ class CoverageMeasurementsTest {
         mockLocation = mockk()
         mockCellInfoLte = mockk()
         mockCellSignalStrengthLte = mockk()
+        mockContentResolver = mockk()
 
         mockkStatic(ContextCompat::class)
         mockkStatic(Settings.Secure::class)
+        mockkStatic("android.text.TextUtils")
+        mockkStatic("android.os.Process")
         mockkObject(GigaCoverageConfig)
+        
+        // Mock TextUtils.equals to return proper comparison
+        every { android.text.TextUtils.equals(any(), any()) } answers { 
+            val arg1 = firstArg<String?>()
+            val arg2 = secondArg<String?>()
+            arg1 == arg2
+        }
+        
+        // Mock Process.myPid() and myUid()
+        every { android.os.Process.myPid() } returns 1234
+        every { android.os.Process.myUid() } returns 5678
 
         every { mockContext.getSystemService(Context.LOCATION_SERVICE) } returns mockLocationManager
         every { mockContext.getSystemService(Context.TELEPHONY_SERVICE) } returns mockTelephonyManager
         every { mockContext.packageManager } returns mockPackageManager
+        every { mockContext.contentResolver } returns mockContentResolver
+        every { mockContext.packageName } returns "com.test.app"
+        every { mockContext.checkPermission(any(), any(), any()) } returns PackageManager.PERMISSION_DENIED
         every { GigaCoverageConfig.imageUrl } returns "https://test-image.com/test.jpg"
     }
 
@@ -60,7 +79,6 @@ class CoverageMeasurementsTest {
         val mockPackageInfo = mockk<PackageInfo>()
         mockPackageInfo.versionName = "1.0.0"
         every { mockPackageManager.getPackageInfo(any<String>(), any<Int>()) } returns mockPackageInfo
-        every { mockContext.packageName } returns "com.test.app"
         every { mockContext.applicationInfo } returns mockk {
             every { loadLabel(mockPackageManager) } returns "Test App"
         }
@@ -92,7 +110,6 @@ class CoverageMeasurementsTest {
         val mockPackageInfo = mockk<PackageInfo>()
         mockPackageInfo.versionName = "1.0.0"
         every { mockPackageManager.getPackageInfo(any<String>(), any<Int>()) } returns mockPackageInfo
-        every { mockContext.packageName } returns "com.test.app"
         every { mockContext.applicationInfo } returns mockk {
             every { loadLabel(mockPackageManager) } returns "Test App"
         }
@@ -127,7 +144,6 @@ class CoverageMeasurementsTest {
         val mockPackageInfo = mockk<PackageInfo>()
         mockPackageInfo.versionName = "1.0.0"
         every { mockPackageManager.getPackageInfo(any<String>(), any<Int>()) } returns mockPackageInfo
-        every { mockContext.packageName } returns "com.test.app"
         every { mockContext.applicationInfo } returns mockk {
             every { loadLabel(mockPackageManager) } returns "Test App"
         }
@@ -144,8 +160,6 @@ class CoverageMeasurementsTest {
 
     @Test
     fun testGetNetworkTypeString_KnownTypes() {
-        val result = CoverageMeasurements.getCoverageMeasurements(mockContext)
-        
         every { ContextCompat.checkSelfPermission(mockContext, android.Manifest.permission.READ_PHONE_STATE) } returns PackageManager.PERMISSION_GRANTED
         every { mockTelephonyManager.networkType } returns TelephonyManager.NETWORK_TYPE_LTE
         every { mockTelephonyManager.allCellInfo } returns emptyList()
@@ -154,13 +168,12 @@ class CoverageMeasurementsTest {
         val mockPackageInfo = mockk<PackageInfo>()
         mockPackageInfo.versionName = "1.0.0"
         every { mockPackageManager.getPackageInfo(any<String>(), any<Int>()) } returns mockPackageInfo
-        every { mockContext.packageName } returns "com.test.app"
         every { mockContext.applicationInfo } returns mockk {
             every { loadLabel(mockPackageManager) } returns "Test App"
         }
 
-        val networkTypeResult = CoverageMeasurements.getCoverageMeasurements(mockContext)
-        assertEquals("LTE", networkTypeResult[CoverageMeasurements.KEY_NETWORK_TYPE])
+        val result = CoverageMeasurements.getCoverageMeasurements(mockContext)
+        assertEquals("LTE", result[CoverageMeasurements.KEY_NETWORK_TYPE])
     }
 
     @Test
@@ -171,7 +184,6 @@ class CoverageMeasurementsTest {
         val mockPackageInfo = mockk<PackageInfo>()
         mockPackageInfo.versionName = "1.0.0"
         every { mockPackageManager.getPackageInfo(any<String>(), any<Int>()) } returns mockPackageInfo
-        every { mockContext.packageName } returns "com.test.app"
         every { mockContext.applicationInfo } returns mockk {
             every { loadLabel(mockPackageManager) } returns "Test App"
         }
