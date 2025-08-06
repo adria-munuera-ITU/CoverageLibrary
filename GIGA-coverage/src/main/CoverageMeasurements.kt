@@ -17,6 +17,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import java.util.Date
 import kotlin.collections.isNotEmpty
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.IOException
+import kotlin.math.roundToInt
 
 class CoverageMeasurements {
 
@@ -41,6 +45,41 @@ class CoverageMeasurements {
         const val KEY_NETWORK_TYPE = "network_type"
         const val KEY_DATA_NETWORK_TYPE = "data_network_type"
 
+
+        private fun measureDownloadSpeed(imageUrl: String): Double? {
+            val client = OkHttpClient()
+            val request = Request.Builder()
+                .url(imageUrl)
+                .build()
+            
+            return try {
+                val startTime = System.currentTimeMillis()
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        return null
+                    }
+                    
+                    val responseBody = response.body
+                    if (responseBody != null) {
+                        val contentLength = responseBody.contentLength()
+                        responseBody.bytes()
+                        val endTime = System.currentTimeMillis()
+                        
+                        val durationSeconds = (endTime - startTime) / 1000.0
+                        val speedBytesPerSecond = contentLength / durationSeconds
+                        val speedKbps = (speedBytesPerSecond * 8 / 1000).roundToInt().toDouble()
+                        
+                        speedKbps
+                    } else {
+                        null
+                    }
+                }
+            } catch (e: IOException) {
+                null
+            } catch (e: Exception) {
+                null
+            }
+        }
 
         @SuppressLint("HardwareIds", "MissingPermission")
         fun getCoverageMeasurements(context: Context): Map<String, Any?> {
@@ -130,6 +169,8 @@ class CoverageMeasurements {
                 }
             }
 
+            data[DOWNLOAD_SPEED] = measureDownloadSpeed(GigaCoverageConfig.imageUrl)
+            
             data[KEY_TIMESTAMP] = Date().time // Always set
             data[KEY_ANDROID_ID] = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
 

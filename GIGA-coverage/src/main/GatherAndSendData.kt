@@ -17,7 +17,6 @@ import org.json.JSONObject
 import java.io.IOException
 import kotlin.collections.putAll
 
-const val YOUR_BASE_URL = "https://your.server.domain.com" // Replace with your actual URL
 
 class GatherAndSendData(private val context: Context) {
 
@@ -30,6 +29,7 @@ class GatherAndSendData(private val context: Context) {
         private const val PREF_API_KEY = "api_key"
         private const val API_GET_KEY_PATH = "/api/get-key"
         private const val API_SEND_DATA_PATH = "/api/send-data"
+        private const val KEY_API_KEY_IN_BODY = "api_key"
         private val JSON = "application/json; charset=utf-8".toMediaType()
     }
 
@@ -52,7 +52,7 @@ class GatherAndSendData(private val context: Context) {
         val jsonBody = JSONObject().put("unique_id", androidId).toString()
         val requestBody = jsonBody.toRequestBody(JSON)
         val request = Request.Builder()
-            .url(YOUR_BASE_URL + API_GET_KEY_PATH)
+            .url(GigaCoverageConfig.baseUrl + API_GET_KEY_PATH)
             .post(requestBody)
             .build()
 
@@ -99,7 +99,7 @@ class GatherAndSendData(private val context: Context) {
         val requestBody = jsonBody.toRequestBody(JSON)
 
         val request = Request.Builder()
-            .url(YOUR_BASE_URL + API_SEND_DATA_PATH)
+            .url(GigaCoverageConfig.baseUrl + API_SEND_DATA_PATH)
             .post(requestBody)
             .build()
 
