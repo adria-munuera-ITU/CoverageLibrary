@@ -1,8 +1,5 @@
 package com.example.giga_coverage
 
-import com.example.giga_coverage.GatherAndSendData
-import com.example.giga_coverage.CoverageMeasurements
-import com.example.giga_coverage.GigaCoverageConfig
 import android.content.Context
 import android.content.SharedPreferences
 import android.provider.Settings
@@ -19,9 +16,6 @@ import org.junit.Assert.*
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import org.robolectric.Shadows.shadowOf
-import org.robolectric.shadows.ShadowSettings
-import java.io.IOException
 
 @RunWith(RobolectricTestRunner::class)
 class GatherAndSendDataTest {
@@ -41,23 +35,18 @@ class GatherAndSendDataTest {
 
         mockkObject(GigaCoverageConfig)
         mockkObject(CoverageMeasurements)
-        
-        // Set up Robolectric Android ID for tests
+
         Settings.Secure.putString(
             RuntimeEnvironment.getApplication().contentResolver,
             Settings.Secure.ANDROID_ID, 
             "test-android-id"
         )
-        
-        // Mock Context methods
+
         every { mockContext.getSharedPreferences("api_prefs", Context.MODE_PRIVATE) } returns mockSharedPreferences
         every { mockContext.contentResolver } returns RuntimeEnvironment.getApplication().contentResolver
-        
-        // Mock SharedPreferences methods
         every { mockSharedPreferences.edit() } returns mockEditor
         every { mockEditor.putString(any(), any()) } returns mockEditor
         every { mockEditor.apply() } just runs
-
         mockWebServer.start()
         every { GigaCoverageConfig.baseUrl } returns mockWebServer.url("/").toString().removeSuffix("/")
     }

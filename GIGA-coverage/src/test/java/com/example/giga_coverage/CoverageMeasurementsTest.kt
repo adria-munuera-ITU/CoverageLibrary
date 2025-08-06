@@ -16,7 +16,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.*
 import java.util.*
-import android.content.ContentResolver
 
 class CoverageMeasurementsTest {
 
@@ -45,15 +44,13 @@ class CoverageMeasurementsTest {
         mockkStatic("android.text.TextUtils")
         mockkStatic("android.os.Process")
         mockkObject(GigaCoverageConfig)
-        
-        // Mock TextUtils.equals to return proper comparison
+
         every { android.text.TextUtils.equals(any(), any()) } answers { 
             val arg1 = firstArg<String?>()
             val arg2 = secondArg<String?>()
             arg1 == arg2
         }
-        
-        // Mock Process.myPid() and myUid()
+
         every { android.os.Process.myPid() } returns 1234
         every { android.os.Process.myUid() } returns 5678
 
