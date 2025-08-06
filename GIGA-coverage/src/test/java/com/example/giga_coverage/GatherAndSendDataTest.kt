@@ -16,8 +16,14 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.*
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowSettings
 import java.io.IOException
 
+@RunWith(RobolectricTestRunner::class)
 class GatherAndSendDataTest {
 
     private lateinit var mockContext: Context
@@ -28,16 +34,26 @@ class GatherAndSendDataTest {
 
     @Before
     fun setUp() {
-        mockContext = mockk()
-        mockSharedPreferences = mockk()
-        mockEditor = mockk()
+        mockContext = mockk(relaxed = true)
+        mockSharedPreferences = mockk(relaxed = true)
+        mockEditor = mockk(relaxed = true)
         mockWebServer = MockWebServer()
 
-        mockkStatic(Settings.Secure::class)
         mockkObject(GigaCoverageConfig)
         mockkObject(CoverageMeasurements)
-
+        
+        // Set up Robolectric Android ID for tests
+        Settings.Secure.putString(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Secure.ANDROID_ID, 
+            "test-android-id"
+        )
+        
+        // Mock Context methods
         every { mockContext.getSharedPreferences("api_prefs", Context.MODE_PRIVATE) } returns mockSharedPreferences
+        every { mockContext.contentResolver } returns RuntimeEnvironment.getApplication().contentResolver
+        
+        // Mock SharedPreferences methods
         every { mockSharedPreferences.edit() } returns mockEditor
         every { mockEditor.putString(any(), any()) } returns mockEditor
         every { mockEditor.apply() } just runs
@@ -88,7 +104,11 @@ class GatherAndSendDataTest {
         val testMeasurements = mapOf("test_key" to "test_value")
 
         every { mockSharedPreferences.getString("api_key", null) } returns null
-        every { Settings.Secure.getString(any(), Settings.Secure.ANDROID_ID) } returns androidId
+        Settings.Secure.putString(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Secure.ANDROID_ID, 
+            androidId
+        )
         every { CoverageMeasurements.getCoverageMeasurements(mockContext) } returns testMeasurements
 
         mockWebServer.enqueue(
@@ -129,7 +149,11 @@ class GatherAndSendDataTest {
         val androidId = "test-android-id"
 
         every { mockSharedPreferences.getString("api_key", null) } returns null
-        every { Settings.Secure.getString(any(), Settings.Secure.ANDROID_ID) } returns androidId
+        Settings.Secure.putString(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Secure.ANDROID_ID, 
+            androidId
+        )
 
         mockWebServer.enqueue(
             MockResponse()
@@ -186,7 +210,11 @@ class GatherAndSendDataTest {
     @Test
     fun testProcessAndSendData_AndroidIdNull() = runTest {
         every { mockSharedPreferences.getString("api_key", null) } returns null
-        every { Settings.Secure.getString(any(), Settings.Secure.ANDROID_ID) } returns null
+        Settings.Secure.putString(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Secure.ANDROID_ID, 
+            null
+        )
 
         gatherAndSendData = GatherAndSendData(mockContext)
         gatherAndSendData.processAndSendData()
@@ -214,7 +242,11 @@ class GatherAndSendDataTest {
         val androidId = "test-android-id"
 
         every { mockSharedPreferences.getString("api_key", null) } returns null
-        every { Settings.Secure.getString(any(), Settings.Secure.ANDROID_ID) } returns androidId
+        Settings.Secure.putString(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Secure.ANDROID_ID, 
+            androidId
+        )
 
         mockWebServer.enqueue(
             MockResponse()
