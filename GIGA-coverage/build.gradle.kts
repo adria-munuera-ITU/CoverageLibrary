@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    id("kotlin-kapt")
 }
 
 android {
@@ -40,4 +41,20 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    
+    // Room database
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+    
+    // Testing dependencies for mocking
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("io.mockk:mockk-android:1.13.8")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
+    testImplementation("org.robolectric:robolectric:4.11.1")
 }
